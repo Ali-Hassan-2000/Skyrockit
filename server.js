@@ -1,3 +1,4 @@
+/* -----------------------------SETUP----------------------------------------------- */
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -15,6 +16,8 @@ const passUserToView = require("./middleware/pass-user-to-view.js");
 
 // Controllers
 const authController = require('./controllers/auth.js');
+
+const applicationsController = require('./controllers/applications.js');
 
 // Set the port from environment variable or default to 3000
 const port = process.env.PORT ? process.env.PORT : '3000';
@@ -47,17 +50,27 @@ app.use(passUserToView);
 
 // PUBLIC
 app.get('/', (req, res) => {
-  res.render('index.ejs');
+
+  if (req.session.user) {
+    // Redirect signed-in users to their applications index
+    res.redirect(`/users/${req.session.user._id}/applications`);
+  } 
+  else {
+    // Show the homepage for users who are not signed in
+    res.render('index.ejs');
+  }
 });
 
 app.use('/auth', authController);
 
-// PROTECTED
+app.use(isSignedIn);
+/* -----------------------------ROUTES----------------------------------------------- */
+// Protected (you need to sgin in)
+app.use('/users/:userId/applications', applicationsController);
 
-app.get("/vip-lounge", isSignedIn, (req, res) => {
-    res.send(`Welcome to the party ${req.session.user.username}.`);
-});
 
+
+/* -----------------------------TCP----------------------------------------------- */
 app.listen(port, () => {
   console.log(`The express app is ready on port ${port}!`);
 });
